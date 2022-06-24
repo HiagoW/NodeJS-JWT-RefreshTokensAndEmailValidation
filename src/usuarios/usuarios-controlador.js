@@ -1,6 +1,12 @@
 const Usuario = require('./usuarios-modelo');
 const { InvalidArgumentError } = require('../erros');
 const tokens = require('./tokens')
+const {EmailVerificacao} = require('./emails');
+
+function geraEndereco(rota, id) {
+  const baseURL = process.env.BASE_URL;
+  return `${baseURL}${rota}${id}`;
+}
 
 module.exports = {
   async adiciona(req, res) {
@@ -10,9 +16,15 @@ module.exports = {
       const usuario = new Usuario({
         nome,
         email,
+        emailVerificado: false
       });
       await usuario.adicionaSenha(senha);
       await usuario.adiciona();
+
+      const endereco = geraEndereco('/usuario/verifica_email/',usuario.id);
+      const emailVerificacao = new EmailVerificacao(usuario, endereco);
+      // Executa assíncrono, pois demora muito
+      emailVerificacao.enviaEmail().catch(console.log);
 
       res.status(201).json();
     } catch (erro) {
